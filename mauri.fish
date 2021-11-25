@@ -1,6 +1,6 @@
 function mauri
     set -l directory $PWD
-    mkdir -p ~/aursign
+    mkdir -p ~/aurshit
     if [ $argv[1] ]
         if [ $argv[1] = asennappas ]
             if [ $argv[2] ]
@@ -95,8 +95,9 @@ function mauri
             end
         end
     else
-        echo "Hei olen Mauri v1.3.1, Mahtava AUR helpperI"
+        echo "Hei olen Mauri v1.3.2, Mahtava AUR helpperI"
         echo "Käytä komentoja 'asennappas', 'poistappas', 'päivitäppäs' ja 'haeppas'"
+        echo "!!! DISCLAIMER: Mauri voi tappaa !!!"
     end
     cd $directory
 end
