@@ -79,9 +79,12 @@ function mauri
             if [ $argv[2] ]
                 echo "Olkoon sitten, Mauri poistaa kyllä."
                 sleep 2
-                cd ~/aurshit/
-                sudo rm -rf "./$argv[2]"
-                sudo pacman -R $argv[2]
+                if cd ~/aurshit/
+                    sudo pacman -R $argv[2]
+                    sudo rm -rf "./$argv[2]"
+                else
+                    echo "Pakettia '$argv[2]' ei voitu poistaa."
+                end
             else
                 echo "'mauri poistappas <paketti>' poistaa paketteja."
             end
