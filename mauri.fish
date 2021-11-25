@@ -1,5 +1,6 @@
 function mauri
     set -l directory $PWD
+    mkdir -p ~/aursign
     if [ $argv[1] ]
         if [ $argv[1] = asennappas ]
             if [ $argv[2] ]
