@@ -31,6 +31,7 @@ function mauri
                     set -l updated 0
                     for dir in ./*
                         cd $dir
+                        git fetch
                         if not git status | grep -q "Your branch is up to date"
                             git pull
                             echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
