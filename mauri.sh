@@ -7,6 +7,8 @@ mauri() {
     # Jos olet silti huolissasi Maurin unensaannista, saat otettua kommentit helposti pois.
     # Esim. vimillä voit käyttää makroa ' :%s/#s/s/g', joka muuttaa "#s" -> "s".
 
+    # Olen huolissani maurin unensaannista.
+    
     maurin_jatokset="$HOME/aurshit" # ~/aurshit on alkuperäisen maurin jätöskansio.
     mkdir -p $maurin_jatokset
 
@@ -19,7 +21,7 @@ mauri() {
         if [ "$arg_1" = "asennappas" ]; then
             if [ $arg_2 ]; then
                 echo "Olkoon sitten, Mauri asentaa kyllä."
-                #sleep 2
+                sleep 2
                 cd $maurin_jatokset
                 git clone "https://aur.archlinux.org/$arg_2.git"
                 cd $arg_2
@@ -39,7 +41,7 @@ mauri() {
             if [ $arg_2 ]; then
                 if [ "$arg_2" = "kaikki" ]; then
                     echo "Olkoon sitten, Mauri päivittää kaiken."
-                    #sleep 2 
+                    sleep 2 
                     cd $maurin_jatokset
                     updated=0
                     for dir in ./*; do
@@ -67,13 +69,13 @@ mauri() {
                     fi
                 else
                     echo "Olkoon sitten, Mauri päivittää kyllä."
-                    #sleep 2
+                    sleep 2
                     cd $maurin_jatokset/$arg_2
                     git status | grep -q "Your branch is up to date"
                     if [ $? -eq 1 ]; then
                         git pull
                         echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
-                        #sleep 2
+                        sleep 2
                         less ./PKGBUILD
                         read -l -n 1 -P "?Luotatko PKGBUILDiin? y/N: " yn
                         if [ "$yn" = "y" ]; then
@@ -93,7 +95,7 @@ mauri() {
         elif [ "$arg_1" = "poistappas" ]; then
             if [ $arg_2 ]; then
                 echo "Olkoon sitten, Mauri poistaa kyllä."
-                #sleep 2
+                sleep 2
                 cd $maurin_jatokset
                 if [ $? -eq 0 ]; then 
                     sudo pacman -R $arg_2
@@ -107,7 +109,7 @@ mauri() {
         elif [ "$arg_1" = "haeppas" ]; then
             if [ $arg_2 ]; then
                 echo "Etkö osaa käyttää duckduckgo:ta? Olkoon sitten. Mauri hakee kyllä."
-                #sleep 2
+                sleep 2
                 ddgr !aur $arg_2
             else
                 echo "'mauri haeppas <paketti>' etsii paketteja, jos et osaa käyttää duckduckgo:ta"
