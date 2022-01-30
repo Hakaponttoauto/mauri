@@ -1,6 +1,7 @@
 #!/bin/sh
 
 mauri() {
+
     maurin_jatokset="$HOME/aurshit" # ~/aurshit on alkuperäisen maurin jätöskansio.
     mkdir -p "$maurin_jatokset"
 
@@ -11,6 +12,7 @@ mauri() {
             if [ "$2" ]; then
                 echo "Olkoon sitten, Mauri asentaa kyllä."
                 sleep 2
+
                 if ! cd "$maurin_jatokset"; then
                     echo "hupsis, Mauri ei päässyt jätöspaikkaansa."
                     echo "Mauri paskantaa tämänhetkiseen kansioon."
@@ -39,6 +41,9 @@ mauri() {
                     return 1
                 fi
 
+                cd "$maurin_jatokset" || return 1
+                git clone "https://aur.archlinux.org/$arg_2.git"
+
                 echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
                 if [ -e PKGBUILD ] && [ -r PKGBUILD ]; then
                     less ./PKGBUILD 
@@ -64,11 +69,11 @@ mauri() {
                     echo "Olkoon sitten, Mauri päivittää kaiken."
                     sleep 2 
                     cd "$maurin_jatokset"  || return 1
-
                     updated=0
-                    for dir in ./*; do
-                        cd "$dir" || echo "hupsis nyt ei onnistunut"; continue
 
+                    for dir in ./*; do
+
+                        cd "$dir" || echo "hupsis nyt ei onnistunut"; continue
                         git fetch
                         if ! git status | grep -q "Your branch is up to date"; then
                             git pull
