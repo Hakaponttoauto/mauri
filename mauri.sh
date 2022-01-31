@@ -2,7 +2,7 @@
 
 mauri() {
 
-    maurin_jatokset="$HOME/.maurishit" # "$HOME/aurshit" on alkuperäisen maurin jätöskansio.
+    maurin_jatokset="$HOME/aurshit" # "$HOME/aurshit" on alkuperäisen maurin jätöskansio.
     mkdir -p "$maurin_jatokset" 
 
     directory="$PWD"
