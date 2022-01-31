@@ -1,33 +1,57 @@
 #!/bin/sh
 
 mauri() {
-    # HUOM: Alkuperäinen Mauri nukkui kaksi sekunttia ennen, kun alotti toiminnan. 
-    # Kommentoin sleep-lausekkeet pois. Ei huolta, Mauri saa nukuttua kyllä!
-    #
-    # Jos olet silti huolissasi Maurin unensaannista, saat otettua kommentit helposti pois.
-    # Esim. vimillä voit käyttää makroa ' :%s/#s/s/g', joka muuttaa "#s" -> "s".
 
-    # Olen huolissani maurin unensaannista.
-    
-    maurin_jatokset="$HOME/aurshit" # ~/aurshit on alkuperäisen maurin jätöskansio.
-    mkdir -p $maurin_jatokset
-
-    arg_1=$argv[1]
-    arg_2=$argv[2]
+    maurin_jatokset="$HOME/aurshit" # "$HOME/aurshit" on alkuperäisen maurin jätöskansio.
+    mkdir -p "$maurin_jatokset" 
 
     directory="$PWD"
 
-    if [ $arg_1 ]; then
-        if [ "$arg_1" = "asennappas" ]; then
-            if [ $arg_2 ]; then
+    if [ "$1" ]; then
+        if [ "$1" = "asennappas" ]; then
+            if [ "$2" ]; then
                 echo "Olkoon sitten, Mauri asentaa kyllä."
                 sleep 2
-                cd $maurin_jatokset
-                git clone "https://aur.archlinux.org/$arg_2.git"
-                cd $arg_2
-                echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
-                less ./PKGBUILD
-                read "?Luotatko PKGBUILDiin? y/N: " yn
+
+                # huutista, edellisessä versiossa jäi vahingossa kyseenalanen errorhandling
+                # fixxattu now
+                if ! cd "$maurin_jatokset"; then
+                    echo "Hupsis, Mauri ei päässyt jätöspaikkaansa."
+                    return 1
+                fi
+
+                gitclone=$(git clone "https://aur.archlinux.org/$2.git")
+                gitclone_returncode=$?
+
+                if echo "$gitclone" | grep -q "You appear to have cloned an empty repository."
+                then
+                    echo "Mauri ei löytänyt ton nimistä pakettia." >/dev/stderr
+                    rm -rf "${maurin_jatokset:?}/$2"
+                    cd "$directory" || return 1
+                    return 1
+
+                elif [ $gitclone_returncode != 0 ]; then
+                    echo "Mauri ei onnistunut asentamaan tota pakettia." > /dev/stderr
+                    cd "$directory" || return 1
+                    return 1
+                fi
+                
+                if ! cd "$2"; then
+                    echo "Hupsis nyt kävi hassusti, eikä Mauri päässyt paketin kansioon"
+                    cd "$directory" || return 1
+                    return 1
+                fi
+
+                if [ -e "PKGBUILD" ] && [ -r "PKGBUILD" ]; then
+                    echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
+                    less ./PKGBUILD 
+                else
+                    echo "Hupsis, Mauri ei löytänyt PKGBUILDia." >/dev/stderr 
+                    cd "$directory" || return 1
+                    return 1
+                fi
+
+                read -r "?Luotatko PKGBUILDiin? y/N: " yn
                 if [ "$yn" = "y" ]; then
                     echo "Mauri asentaa..."
                     makepkg -si
@@ -37,23 +61,24 @@ mauri() {
             else
                 echo "'mauri asennappas <paketti>' asentaa paketteja."
             fi
-        elif [ "$arg_1" = "päivitäppäs" ]; then
-            if [ $arg_2 ]; then
-                if [ "$arg_2" = "kaikki" ]; then
+        elif [ "$1" = "päivitäppäs" ]; then
+            if [ "$2" ]; then
+                if [ "$2" = "kaikki" ]; then
                     echo "Olkoon sitten, Mauri päivittää kaiken."
                     sleep 2 
-                    cd $maurin_jatokset
+                    cd "$maurin_jatokset"  || return 1
                     updated=0
+
                     for dir in ./*; do
-                        cd $dir
+
+                        cd "$dir" || echo "hupsis nyt ei onnistunut"; continue
                         git fetch
-                        git status | grep -q "Your branch is up to date"
-                        if [ $? -eq 1 ]; then
+                        if ! git status | grep -q "Your branch is up to date"; then
                             git pull
                             echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
                             sleep 2
                             less ./PKGBUILD
-                            read "?Luotatko PKGBUILDiin? y/N: " yn
+                            read -r "?Luotatko PKGBUILDiin? y/N: " yn
                             if [ "$yn" = "y" ]; then
                                 echo "Mauri asentaa..."
                                 makepkg -si
@@ -62,7 +87,7 @@ mauri() {
                             fi
                             updated=1
                         fi
-                        cd ..
+                        cd .. || return 1
                     done
                     if [ $updated -eq 0 ]; then
                         echo "Ei ollut mitään päivitettävää :("
@@ -70,14 +95,14 @@ mauri() {
                 else
                     echo "Olkoon sitten, Mauri päivittää kyllä."
                     sleep 2
-                    cd $maurin_jatokset/$arg_2
-                    git status | grep -q "Your branch is up to date"
-                    if [ $? -eq 1 ]; then
+                    cd "$maurin_jatokset/$2" || echo "hupsis"; return
+                    
+                    if git status | grep -q "Your branch is up to date"; then
                         git pull
                         echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
                         sleep 2
                         less ./PKGBUILD
-                        read -l -n 1 -P "?Luotatko PKGBUILDiin? y/N: " yn
+                        read -r "?Luotatko PKGBUILDiin? y/N: " yn
                         if [ "$yn" = "y" ]; then
                             echo "Mauri asentaa..."
                             makepkg -si
@@ -85,42 +110,51 @@ mauri() {
                             echo "Mauri ei asenna :("
                         fi
                     else
-                        echo "Paketti '$arg_2' on jo ajan tasalla."
+                        echo "Paketti '$2' on jo ajan tasalla."
                     fi
                 fi
             else
                 echo "'mauri päivitäppäs <paketti>' päivittää paketteja."
                 echo "'mauri päivitäppäs kaikki' päivittää kaikki paketit."
             fi
-        elif [ "$arg_1" = "poistappas" ]; then
-            if [ $arg_2 ]; then
+        elif [ "$1" = "poistappas" ]; then
+            if [ "$2" ]; then
                 echo "Olkoon sitten, Mauri poistaa kyllä."
                 sleep 2
-                cd $maurin_jatokset
-                if [ $? -eq 0 ]; then 
-                    sudo pacman -R $arg_2
-                    sudo rm -rf $arg_2
+
+                if cd "$maurin_jatokset"; then 
+                    sudo /usr/bin/pacman -R "$2" \
+                        || doas /usr/bin/pacman -R "$2" \
+                        || su -c "pacman -R $2" root
+
+                    sudo /bin/rm -rf "$2" \
+                        || doas /bin/rm -rf "$2" \
+                        || /bin/su -c "/bin/rm -rf $2" root
                 else
-                    echo "Pakettia '$arg_2' ei voitu poistaa."
+                    echo "Mauri ei löytänyt kansiota paketille." >/dev/stderr
                 fi
             else
                 echo "'mauri poistappas <paketti>' poistaa paketteja."
             fi
-        elif [ "$arg_1" = "haeppas" ]; then
-            if [ $arg_2 ]; then
+        elif [ "$1" = "haeppas" ]; then
+            if [ "$2" ]; then
                 echo "Etkö osaa käyttää duckduckgo:ta? Olkoon sitten. Mauri hakee kyllä."
                 sleep 2
-                ddgr !aur $arg_2
+                ddgr --np "\!aur $2"
             else
                 echo "'mauri haeppas <paketti>' etsii paketteja, jos et osaa käyttää duckduckgo:ta"
+            fi
+        elif [ "$1" = "listaappas" ]; then
+            if ! exa -l "$maurin_jatokset"; then
+                ls -l --color "$maurin_jatokset"
             fi
         fi
     else
         echo "Hei olen Mauri v1.3.2, Mahtava AUR helpperI"
-        echo "Käytä komentoja 'asennappas', 'poistappas', 'päivitäppäs' ja 'haeppas'"
+        echo "Käytä komentoja 'asennappas', 'poistappas', 'päivitäppäs', 'listaappas' ja 'haeppas'"
         echo "!!! DISCLAIMER: Mauri voi tappaa !!!"
     fi
 
-    cd $directory
+    cd "$directory" || echo "Mauri ei onnistunut menemään takaisin." >/dev/stderr && return
 }
 
