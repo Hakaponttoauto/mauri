@@ -2,8 +2,8 @@
 
 mauri() {
 
-    maurin_jatokset="$HOME/aurshit" # ~/aurshit on alkuperäisen maurin jätöskansio.
-    mkdir -p "$maurin_jatokset"
+    maurin_jatokset="$HOME/.maurishit" # "$HOME/aurshit" on alkuperäisen maurin jätöskansio.
+    mkdir -p "$maurin_jatokset" 
 
     directory="$PWD"
 
@@ -13,20 +13,21 @@ mauri() {
                 echo "Olkoon sitten, Mauri asentaa kyllä."
                 sleep 2
 
+                # huutista, edellisessä versiossa jäi vahingossa kyseenalanen errorhandling
+                # fixxattu now
                 if ! cd "$maurin_jatokset"; then
-                    echo "hupsis, Mauri ei päässyt jätöspaikkaansa."
-                    echo "Mauri paskantaa tämänhetkiseen kansioon."
+                    echo "Hupsis, Mauri ei päässyt jätöspaikkaansa."
+                    return 1
                 fi
 
-                gitclone=$(git clone "https://aur.archlinux.org/$2.git" "$maurin_jatokset/$2")
+                gitclone=$(git clone "https://aur.archlinux.org/$2.git")
                 gitclone_returncode=$?
 
-                if ! echo "$gitclone" | grep -q "You appear to have cloned an empty repository."
+                if echo "$gitclone" | grep -q "You appear to have cloned an empty repository."
                 then
                     echo "Mauri ei löytänyt ton nimistä pakettia." >/dev/stderr
                     rm -rf "${maurin_jatokset:?}/$2"
                     cd "$directory" || return 1
-
                     return 1
 
                 elif [ $gitclone_returncode != 0 ]; then
@@ -41,11 +42,8 @@ mauri() {
                     return 1
                 fi
 
-                cd "$maurin_jatokset" || return 1
-                git clone "https://aur.archlinux.org/$arg_2.git"
-
-                echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
-                if [ -e PKGBUILD ] && [ -r PKGBUILD ]; then
+                if [ -e "PKGBUILD" ] && [ -r "PKGBUILD" ]; then
+                    echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
                     less ./PKGBUILD 
                 else
                     echo "Hupsis, Mauri ei löytänyt PKGBUILDia." >/dev/stderr 
@@ -146,10 +144,14 @@ mauri() {
             else
                 echo "'mauri haeppas <paketti>' etsii paketteja, jos et osaa käyttää duckduckgo:ta"
             fi
+        elif [ "$1" = "listaappas" ]; then
+            if ! exa -l "$maurin_jatokset"; then
+                ls -l --color "$maurin_jatokset"
+            fi
         fi
     else
         echo "Hei olen Mauri v1.3.2, Mahtava AUR helpperI"
-        echo "Käytä komentoja 'asennappas', 'poistappas', 'päivitäppäs' ja 'haeppas'"
+        echo "Käytä komentoja 'asennappas', 'poistappas', 'päivitäppäs', 'listaappas' ja 'haeppas'"
         echo "!!! DISCLAIMER: Mauri voi tappaa !!!"
     fi
 
