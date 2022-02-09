@@ -2,7 +2,7 @@
 
 mauri() {
 
-    maurin_jatokset="$HOME/aurshit" # "$HOME/aurshit" on alkuperäisen maurin jätöskansio.
+    maurin_jatokset="$HOME/.maurishit" # "$HOME/aurshit" on alkuperäisen maurin jätöskansio.
     mkdir -p "$maurin_jatokset" 
 
     directory="$PWD"
@@ -13,9 +13,7 @@ mauri() {
                 echo "Olkoon sitten, Mauri asentaa kyllä."
                 sleep 2
 
-                # huutista, edellisessä versiossa jäi vahingossa kyseenalanen errorhandling
-                # fixxattu now
-                if ! cd "$maurin_jatokset"; then
+                if ! \cd "$maurin_jatokset"; then
                     echo "Hupsis, Mauri ei päässyt jätöspaikkaansa."
                     return 1
                 fi
@@ -27,27 +25,28 @@ mauri() {
                 then
                     echo "Mauri ei löytänyt ton nimistä pakettia." >/dev/stderr
                     rm -rf "${maurin_jatokset:?}/$2"
-                    cd "$directory" || return 1
+                    \cd "$directory" || return 1
                     return 1
 
                 elif [ $gitclone_returncode != 0 ]; then
                     echo "Mauri ei onnistunut asentamaan tota pakettia." > /dev/stderr
-                    cd "$directory" || return 1
+                    \cd "$directory" || return 1
                     return 1
                 fi
                 
-                if ! cd "$2"; then
+                if ! \cd "$2"; then
                     echo "Hupsis nyt kävi hassusti, eikä Mauri päässyt paketin kansioon"
-                    cd "$directory" || return 1
+                    \cd "$directory" || return 1
                     return 1
                 fi
 
-                if [ -e "PKGBUILD" ] && [ -r "PKGBUILD" ]; then
+                ls
+                if [ -e "PKGBUILD" ]; then
                     echo "Mauri käskee sinua tarkastelemaan PKGBUILDia."
                     less ./PKGBUILD 
                 else
                     echo "Hupsis, Mauri ei löytänyt PKGBUILDia." >/dev/stderr 
-                    cd "$directory" || return 1
+                    \cd "$directory" || return 1
                     return 1
                 fi
 
@@ -66,12 +65,12 @@ mauri() {
                 if [ "$2" = "kaikki" ]; then
                     echo "Olkoon sitten, Mauri päivittää kaiken."
                     sleep 2 
-                    cd "$maurin_jatokset"  || return 1
+                    \cd "$maurin_jatokset"  || return 1
                     updated=0
 
                     for dir in ./*; do
 
-                        cd "$dir" || echo "hupsis nyt ei onnistunut"; continue
+                       \cd "$dir" || echo "hupsis nyt ei onnistunut"; continue
                         git fetch
                         if ! git status | grep -q "Your branch is up to date"; then
                             git pull
@@ -87,7 +86,7 @@ mauri() {
                             fi
                             updated=1
                         fi
-                        cd .. || return 1
+                       \cd .. || return 1
                     done
                     if [ $updated -eq 0 ]; then
                         echo "Ei ollut mitään päivitettävää :("
@@ -95,7 +94,7 @@ mauri() {
                 else
                     echo "Olkoon sitten, Mauri päivittää kyllä."
                     sleep 2
-                    cd "$maurin_jatokset/$2" || echo "hupsis"; return
+                   \cd "$maurin_jatokset/$2" || echo "hupsis"; return
                     
                     if git status | grep -q "Your branch is up to date"; then
                         git pull
@@ -122,11 +121,13 @@ mauri() {
                 echo "Olkoon sitten, Mauri poistaa kyllä."
                 sleep 2
 
-                if cd "$maurin_jatokset"; then 
+                if \cd "$maurin_jatokset"; then 
+                    echo "Mauri poistaa nyt pacman pakettia..."
                     sudo /usr/bin/pacman -R "$2" \
                         || doas /usr/bin/pacman -R "$2" \
                         || su -c "pacman -R $2" root
 
+                    echo "Mauri poistaa nyt paketin jätöksiä jätöskansiosta..."
                     sudo /bin/rm -rf "$2" \
                         || doas /bin/rm -rf "$2" \
                         || /bin/su -c "/bin/rm -rf $2" root
@@ -146,7 +147,7 @@ mauri() {
             fi
         elif [ "$1" = "listaappas" ]; then
             if ! exa -l "$maurin_jatokset"; then
-                ls -l --color "$maurin_jatokset"
+               \ls -l --color "$maurin_jatokset"
             fi
         fi
     else
@@ -155,6 +156,6 @@ mauri() {
         echo "!!! DISCLAIMER: Mauri voi tappaa !!!"
     fi
 
-    cd "$directory" || echo "Mauri ei onnistunut menemään takaisin." >/dev/stderr && return
+   \cd "$directory" || echo "Mauri ei onnistunut menemään takaisin." >/dev/stderr && return
 }
 
