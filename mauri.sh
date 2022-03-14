@@ -179,5 +179,5 @@ else
     show_help
 fi
 
-cd "$directory" || echo "Mauri ei onnistunut menemään takaisin." >/dev/stderr && exit
+cd_and_exit
 
